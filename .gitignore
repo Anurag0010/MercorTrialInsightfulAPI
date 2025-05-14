@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environment
+venv/
+env/
+.env
+.venv
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite3
+
+# Secrets and Credentials
+.env
+*.key
+
+# Deployment and Build
+build/
+dist/
+*.egg-info/
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+
+# Flask Migrations
+migrations/
+
+# Azure and Cloud Specific
+.azure/
+*.azurewebsites.config
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage

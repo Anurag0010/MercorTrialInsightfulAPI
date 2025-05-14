@@ -1,0 +1,16 @@
+flask
+python-dotenv
+psycopg2-binary
+azure-storage-blob
+azure-identity
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-CORS
+python-jose
+python-dateutil
+requests
+
+# Testing dependencies
+pytest
+flask-testing
+gunicorn
