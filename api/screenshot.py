@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Screenshot, db
+from api.models import Screenshot
 from datetime import datetime
 
 screenshot_bp = Blueprint('screenshot', __name__)

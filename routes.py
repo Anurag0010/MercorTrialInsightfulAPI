@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app import db
-from models import User
+# Removed import as User model is not found
 from utils.blob_storage import upload_to_blob, get_blob_url
 
 api_bp = Blueprint('api', __name__)

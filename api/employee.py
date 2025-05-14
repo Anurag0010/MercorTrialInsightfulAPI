@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from models import Employee, db
+from app import db
+from api.models import Employee
 
 employee_bp = Blueprint('employee', __name__)
 
@@ -17,9 +18,13 @@ def create_employee():
         active=data.get('active', True),
         profile_image_url=data.get('profile_image_url')
     )
-    db.session.add(employee)
-    db.session.commit()
-    return jsonify(employee.to_dict()), 201
+    try:
+        db.session.add(employee)
+        db.session.commit()
+        return jsonify(employee.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
 
 @employee_bp.route('/employees/<int:employee_id>', methods=['PATCH'])
 def update_employee(employee_id):

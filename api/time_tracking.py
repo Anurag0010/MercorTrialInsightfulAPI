@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import TimeLog, db
+from api.models import TimeLog
 from datetime import datetime
 
 time_tracking_bp = Blueprint('time_tracking', __name__)

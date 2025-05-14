@@ -5,6 +5,12 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from config import Config
 import os
+# Import and register blueprints
+from api.employee import employee_bp
+from api.project import project_bp
+from api.task import task_bp
+from api.time_tracking import time_tracking_bp
+from api.screenshot import screenshot_bp
 
 # Load environment variables
 load_dotenv()
@@ -26,22 +32,11 @@ def create_app():
     db.init_app(app)
     migrate = Migrate(app, db)
 
-    # Import and register blueprints
-    from api.employee import employee_bp
-    from api.project import project_bp
-    from api.task import task_bp
-    from api.time_tracking import time_tracking_bp
-    from api.screenshot import screenshot_bp
-
     app.register_blueprint(employee_bp, url_prefix='/api')
     app.register_blueprint(project_bp, url_prefix='/api')
     app.register_blueprint(task_bp, url_prefix='/api')
     app.register_blueprint(time_tracking_bp, url_prefix='/api')
     app.register_blueprint(screenshot_bp, url_prefix='/api')
-
-    @app.route('/api/health', methods=['GET'])
-    def health_check():
-        return jsonify({'status': 'OK'}), 200
 
     return app
 
