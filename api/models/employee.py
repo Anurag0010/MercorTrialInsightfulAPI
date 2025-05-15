@@ -1,9 +1,10 @@
 from datetime import datetime
-from app import db
+from database import db
 from .base import project_employee, task_employee
 
 class Employee(db.Model):
     __tablename__ = 'employees'
+    __table_args__ = {'schema': 'mercor'}
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)

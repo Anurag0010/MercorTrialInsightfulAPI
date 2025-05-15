@@ -10,6 +10,49 @@ A Flask-based API service for time tracking, inspired by Insightful, with suppor
 - ORM: SQLAlchemy
 - Migration: Flask-Migrate
 
+## Prerequisites
+- Python 3.8+
+- Azure PostgreSQL Database
+- Azure Blob Storage Account
+
+## Setup Instructions
+
+1. Clone the repository
+```bash
+git clone https://github.com/your-repo/mercor-time-tracker.git
+cd mercor-time-tracker
+```
+
+2. Create a virtual environment
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+```
+
+3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+4. Configure Environment Variables
+- Copy `.env.example` to `.env`
+- Fill in your Azure PostgreSQL and Blob Storage credentials
+
+5. Initialize Database
+```bash
+flask db upgrade
+```
+
+6. Run the Application
+```bash
+flask run
+```
+
+## Configuration Notes
+- Use `.env` for local development
+- For production, set environment variables directly on your hosting platform
+- Ensure you have the necessary Azure credentials and network access
+
 ## Local Development Setup
 
 ### Prerequisites
@@ -41,8 +84,23 @@ A Flask-based API service for time tracking, inspired by Insightful, with suppor
 
 5. Initialize the database
    ```bash
+   # For local SQLite development
+   flask db upgrade
+   
+   # For Azure PostgreSQL
+   # First, create the Mercor schema
+   python scripts/create_mercor_schema.py
+   
+   # Then run migrations
    flask db upgrade
    ```
+
+## Azure PostgreSQL Configuration
+- Create an Azure PostgreSQL Flexible Server
+- Set up a database named `mercor_timetracker`
+- Create a user with appropriate permissions
+- Configure the `.env` file with your connection details
+- Use the `mercor` schema for all database objects
 
 6. Run the application
    ```bash

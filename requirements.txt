@@ -1,14 +1,18 @@
 flask
 python-dotenv
-psycopg2-binary
+psycopg2-binary==2.9.9
 azure-storage-blob
-azure-identity
+azure-identity==1.15.0
+azure-keyvault-secrets==4.7.0
 Flask-SQLAlchemy
 Flask-Migrate
 Flask-CORS
 python-jose
 python-dateutil
 requests
+flask-jwt-extended
+passlib
+flask-restx
 
 # Testing dependencies
 pytest
