@@ -389,3 +389,24 @@ class ProjectTaskDetail(Resource):
         db.session.commit()
         
         return '', 204
+    
+@api.route('/employees')
+class EmployerEmployees(Resource):
+    @jwt_required()
+    @employer_required
+    @api.response(200, 'Success')
+    @api.response(403, 'Not authorized')
+    def list(self):
+        claims = get_jwt()
+        employer_id = claims['employer_id']
+        projects = Project.query.filter_by(employer_id=employer_id).all()  
+        employees = []
+        employee_ids = set()
+        for project in projects:
+            for employee in project.employees:
+                if employee.id not in employee_ids:
+                    employee_ids.add(employee.id)
+                    employees.append(employee)
+        
+        return employees
+    

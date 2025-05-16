@@ -3,6 +3,7 @@ from api.models.employee import Employee
 from database import db
 from flask_jwt_extended import jwt_required, get_jwt
 from api.route_restx.auth_decorators import role_required, employee_required, employer_required, check_mac_address
+from api.models.project import Project
 
 api = Namespace('employees', description='Employee operations')
 
@@ -414,11 +415,47 @@ class EmployeeTasks(Resource):
             abort(500, f'Failed to unassign task: {str(e)}')
 
 
-
-    @api.doc(description='This endpoint can be accessed by both employees and employers')
-    @role_required(['employee', 'employer'])
+@api.route('/projects')
+class EmployeeProjects(Resource):
+    # Get projects and tasks for an employee when employee calls this endpoint
+    @api.doc(description='Get projects and tasks for an employee')
+    @role_required(['employee'])
+    @api.response(200, 'Success')
+    @api.response(403, 'Not authorized')
+    @api.response(404, 'Project not found')
     def get(self):
-        """Multi-role endpoint (employees and employers)"""
-        identity = get_jwt()
-        user_type = identity.get('role', identity.get('type'))
-        return {'message': f'Hello {user_type} #{identity["id"]}, you have access to this endpoint'}
+        """Get projects and tasks for an employee"""
+        claims = get_jwt()
+        employee_id = claims['id']
+        projects = Project.query.filter_by(employer_id=employee_id).all()
+        return {
+            'projects': [{
+                'id': project.id,
+                'name': project.name,
+                'description': project.description,
+                'hourly_rate': float(project.hourly_rate) if project.hourly_rate else None,
+                'created_at': project.created_at,
+                'updated_at': project.updated_at,
+                'employee_count': len(project.employees),
+                'employees': [{
+                    'id': employee.id,
+                    'name': employee.name,
+                    'email': employee.email
+                } for employee in project.employees],
+                'tasks': [{
+                    'id': task.id,
+                    'name': task.name,
+                    'status': task.status
+                } for task in project.tasks]
+            } for project in projects]
+        }
+
+
+
+        @api.doc(description='This endpoint can be accessed by both employees and employers')
+        @role_required(['employee', 'employer'])
+        def get(self):
+            """Multi-role endpoint (employees and employers)"""
+            identity = get_jwt()
+            user_type = identity.get('role', identity.get('type'))
+            return {'message': f'Hello {user_type} #{identity["id"]}, you have access to this endpoint'}
