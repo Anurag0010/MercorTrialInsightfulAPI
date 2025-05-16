@@ -4,6 +4,8 @@ from database import db
 from .base import project_employee, task_employee
 from passlib.hash import bcrypt
 
+from datetime import datetime, timedelta
+
 class Employee(db.Model):
     __tablename__ = 'employees'
     __table_args__ = (
@@ -22,6 +24,11 @@ class Employee(db.Model):
     profile_image_url: Optional[str] = db.Column(db.String(255))
     created_at: datetime = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at: datetime = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Activation fields
+    activation_token = db.Column(db.String(64), nullable=True, unique=True)
+    activation_token_expiry = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=False)
     
     # Relationships
     projects = db.relationship('Project', secondary=project_employee, back_populates='employees')

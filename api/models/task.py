@@ -19,6 +19,7 @@ class Task(db.Model):
     project_id: int = db.Column(db.Integer, db.ForeignKey('mercor.projects.id'), nullable=False)
     created_at: datetime = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at: datetime = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    minutes_spent = db.Column(db.Integer, default=0)  # Total minutes spent on the task
     
     # Relationships
     project = db.relationship('Project', back_populates='tasks')

@@ -19,6 +19,8 @@ from api.route_restx.time_tracking_routes import api as timelog_ns
 from api.route_restx.screenshot_routes import api as screenshot_ns
 from api.route_restx.auth_routes import api as auth_ns
 from api.route_restx.employer_routes import api as employer_ns
+from api.route_restx.invite_routes import invite_ns
+from api.route_restx.activation_routes import activation_ns
 
 from api.routes import blueprints
 from constants import CONTAINER_NAMES
@@ -51,6 +53,8 @@ def create_app_with_restx() -> Flask:
     restx_api.add_namespace(screenshot_ns, path='/api/screenshots')
     restx_api.add_namespace(auth_ns, path='/api/auth')
     restx_api.add_namespace(employer_ns, path='/api/employers')
+    restx_api.add_namespace(invite_ns, path='/api/invite')
+    restx_api.add_namespace(activation_ns, path='/api/activation')
 
     # Initialize Azure Storage
     storage = AzureStorage(app)

@@ -118,9 +118,12 @@ class EmployeeResource(Resource):
             } for p in employee.projects],
             'tasks': [{
                 'id': t.id,
-                'title': t.title,
+                'title': t.name,
                 'status': t.status,
-                'hourly_rate': t.hourly_rate,
+                'hourly_rate': t.project.hourly_rate,
+                'total_hours': t.minutes_spent / 60,
+                'project_id': t.project.id,
+                'total_cost': (t.minutes_spent / 60) * t.project.hourly_rate
             } for t in employee.tasks]
         }
 
@@ -133,7 +136,7 @@ class EmployeeResource(Resource):
         # Check if employee is updating their own record
         identity = get_jwt_identity()
         if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
-            abort(403, 'You can only update your own employee record')
+            abort(403, 'You can only update your own details')
             
         return self._update_employee(employee_id)
     
@@ -146,7 +149,7 @@ class EmployeeResource(Resource):
         # Check if employee is updating their own record
         identity = get_jwt_identity()
         if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
-            abort(403, 'You can only update your own employee record')
+            abort(403, 'You can only update your own details.')
             
         return self._update_employee(employee_id)
     
@@ -182,6 +185,7 @@ class EmployeeResource(Resource):
         db.session.delete(employee)
         db.session.commit()
         return '', 204
+
 
 @api.route('/<int:employee_id>/projects')
 @api.param('employee_id', 'The employee identifier')
