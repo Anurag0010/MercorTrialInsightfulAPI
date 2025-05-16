@@ -396,7 +396,7 @@ class EmployerEmployees(Resource):
     @employer_required
     @api.response(200, 'Success')
     @api.response(403, 'Not authorized')
-    def list(self):
+    def get(self):
         claims = get_jwt()
         employer_id = claims['employer_id']
         projects = Project.query.filter_by(employer_id=employer_id).all()  

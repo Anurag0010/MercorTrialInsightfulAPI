@@ -4,6 +4,8 @@ from database import db
 from flask_jwt_extended import jwt_required, get_jwt
 from api.route_restx.auth_decorators import role_required, employee_required, employer_required, check_mac_address
 from api.models.project import Project
+from api.models.task import Task
+from api.models.employee import task_employee
 
 api = Namespace('employees', description='Employee operations')
 
@@ -450,6 +452,33 @@ class EmployeeProjects(Resource):
             } for project in projects]
         }
 
+
+
+@api.route('/tasks')
+class EmployeeTasks(Resource):
+    # Get projects and tasks for an employee when employee calls this endpoint
+    @api.doc(description='Get projects and tasks for an employee')
+    @role_required(['employee'])
+    @api.response(200, 'Success')
+    @api.response(403, 'Not authorized')
+    def get(self):
+        """Get projects and tasks for an employee"""
+        claims = get_jwt()
+        employee_id = claims['id']
+        
+        tasks: list[Task] = Task.query.join(Task.employees).filter_by(id=employee_id).all()
+        full_tasks = []
+        for task in tasks:
+            full_tasks.append({
+                'id': task.id,
+                'name': task.name,
+                'status': task.status,
+                'project_id': task.project_id,
+                'project_name': task.project.name,
+                'project_hourly_rate': float(task.project.hourly_rate) if task.project.hourly_rate else None,
+                'project_employee_count': len(task.project.employees)
+            })
+        return full_tasks
 
 
         @api.doc(description='This endpoint can be accessed by both employees and employers')
