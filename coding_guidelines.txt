@@ -1,0 +1,2 @@
+1. Always use python type annotations to reduce bugs
+2. When making changes to routes, the primary routes are routes in route_restx

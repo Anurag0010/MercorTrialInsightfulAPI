@@ -13,6 +13,6 @@ user_model = api.model('User', {
 @api.route('/')
 class UserList(Resource):
     @api.marshal_list_with(user_model)
-    def get(self):
+    def get(self) -> list[User]:
         """Get all users"""
         return User.query.all()

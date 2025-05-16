@@ -15,13 +15,13 @@ project_model = api.model('Project', {
 @api.route('/')
 class ProjectList(Resource):
     @api.marshal_list_with(project_model)
-    def get(self):
+    def get(self) -> list[Project]:
         """Get all projects"""
         return Project.query.all()
 
     @api.expect(project_model)
     @api.marshal_with(project_model, code=201)
-    def post(self):
+    def post(self) -> tuple[Project, int]:
         """Create a new project"""
         data = api.payload
         project = Project(name=data['name'], description=data.get('description'))

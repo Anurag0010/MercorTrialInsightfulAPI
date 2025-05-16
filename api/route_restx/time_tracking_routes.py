@@ -17,13 +17,13 @@ time_log_model = api.model('TimeLog', {
 @api.route('/')
 class TimeLogList(Resource):
     @api.marshal_list_with(time_log_model)
-    def get(self):
+    def get(self) -> list[TimeLog]:
         """Get all time logs"""
         return TimeLog.query.all()
 
     @api.expect(time_log_model)
     @api.marshal_with(time_log_model, code=201)
-    def post(self):
+    def post(self) -> tuple[TimeLog, int]:
         """Create a new time log"""
         data = api.payload
         time_log = TimeLog(

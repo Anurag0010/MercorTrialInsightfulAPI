@@ -3,6 +3,7 @@ from flask import Blueprint
 # Create blueprints for each route module
 project_bp = Blueprint('project', __name__)
 employee_bp = Blueprint('employee', __name__)
+employer_bp = Blueprint('employer', __name__)  # Added employer blueprint
 task_bp = Blueprint('task', __name__)
 time_tracking_bp = Blueprint('time_tracking', __name__)
 screenshot_bp = Blueprint('screenshot', __name__)
@@ -10,6 +11,7 @@ screenshot_bp = Blueprint('screenshot', __name__)
 # Import routes to register them with blueprints
 from . import project_routes
 from . import employee_routes
+from . import employer_routes  # Import employer routes
 from . import task_routes
 from . import time_tracking_routes
 from . import screenshot_routes
@@ -19,6 +21,7 @@ from .auth_routes import auth_bp
 blueprints = [
     (project_bp, '/api'),
     (employee_bp, '/api'),
+    (employer_bp, '/api'),  # Register employer blueprint
     (task_bp, '/api'),
     (time_tracking_bp, '/api'),
     (screenshot_bp, '/api'),

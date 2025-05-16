@@ -14,13 +14,13 @@ screenshot_model = api.model('Screenshot', {
 @api.route('/')
 class ScreenshotList(Resource):
     @api.marshal_list_with(screenshot_model)
-    def get(self):
+    def get(self) -> list[Screenshot]:
         """Get all screenshots"""
         return Screenshot.query.all()
 
     @api.expect(screenshot_model)
     @api.marshal_with(screenshot_model, code=201)
-    def post(self):
+    def post(self) -> tuple[Screenshot, int]:
         """Create a new screenshot"""
         data = api.payload
         screenshot = Screenshot(

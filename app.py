@@ -1,4 +1,5 @@
-from flask import Flask
+from flask import Flask, jsonify
+from typing import Tuple, Dict, Any, List, Union
 from flask_migrate import Migrate
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -16,7 +17,8 @@ from api.route_restx.employee_routes import api as employee_ns
 from api.route_restx.task_routes import api as task_ns
 from api.route_restx.time_tracking_routes import api as timelog_ns
 from api.route_restx.screenshot_routes import api as screenshot_ns
-
+from api.route_restx.auth_routes import api as auth_ns
+from api.route_restx.employer_routes import api as employer_ns
 
 from api.routes import blueprints
 import os
@@ -24,7 +26,8 @@ import os
 # Load environment variables
 load_dotenv()
 
-def create_app_with_restx():
+def create_app_with_restx() -> Flask:
+    """Create and configure the Flask app with REST-X API"""
     # Initialize Flask app
     app = Flask(__name__)
 
@@ -45,21 +48,24 @@ def create_app_with_restx():
     restx_api.add_namespace(task_ns, path='/api/tasks')
     restx_api.add_namespace(timelog_ns, path='/api/timelogs')
     restx_api.add_namespace(screenshot_ns, path='/api/screenshots')
+    restx_api.add_namespace(auth_ns, path='/api/auth')
+    restx_api.add_namespace(employer_ns, path='/api/employers')
 
     # Initialize Azure Storage
     storage = AzureStorage(app)
 
     # Add error handlers
     @app.errorhandler(Exception)
-    def handle_error(error):
-        code = 500
+    def handle_error(error: Exception) -> Tuple[Dict[str, str], int]:
+        code: int = 500
         if hasattr(error, 'code'):
             code = error.code
         return {'message': str(error), 'error': type(error).__name__}, code
 
     return app
 
-def create_app():
+def create_app() -> Flask:
+    """Create and configure the Flask app with traditional routes"""
     # Initialize Flask app
     app = Flask(__name__)
     app.secret_key = 'your_secret_key'
@@ -77,8 +83,8 @@ def create_app():
 
     # Add error handlers
     @app.errorhandler(Exception)
-    def handle_error(error):
-        code = 500
+    def handle_error(error: Exception) -> Tuple[Dict[str, str], int]:
+        code: int = 500
         if hasattr(error, 'code'):
             code = error.code
         return {'message': str(error), 'error': type(error).__name__}, code
@@ -87,14 +93,6 @@ def create_app():
 
 # Create the app instance
 app = create_app_with_restx()
-
-# app = Flask(__name__)
-
-# @app.route('/ping', methods=['GET'])
-# def ping():
-#     return {"message": "pong"}, 200
-
-
 
 if __name__ == '__main__':
     for rule in app.url_map.iter_rules():
