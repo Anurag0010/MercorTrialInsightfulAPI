@@ -25,4 +25,3 @@ class Task(db.Model):
     project = db.relationship('Project', back_populates='tasks')
     employees = db.relationship('Employee', secondary=task_employee, back_populates='tasks')
     time_logs  = db.relationship('TimeLog', back_populates='task')
-    screenshots = db.relationship('Screenshot', back_populates='task')

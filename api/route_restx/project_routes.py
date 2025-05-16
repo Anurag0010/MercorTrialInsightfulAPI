@@ -1,6 +1,7 @@
 from flask_restx import Namespace, Resource, fields
 from api.models.project import Project
 from database import db
+from api.route_restx.auth_decorators import role_required
 
 api = Namespace('projects', description='Project operations')
 

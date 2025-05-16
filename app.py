@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from config import Config
 from database import db, init_db
 from storage import AzureStorage
-from api.routes import blueprints
 from flask_restx import Api
 import sys
 
@@ -16,13 +15,11 @@ from api.route_restx.project_routes import api as project_ns
 from api.route_restx.employee_routes import api as employee_ns
 from api.route_restx.task_routes import api as task_ns
 from api.route_restx.time_tracking_routes import api as timelog_ns
-from api.route_restx.screenshot_routes import api as screenshot_ns
 from api.route_restx.auth_routes import api as auth_ns
 from api.route_restx.employer_routes import api as employer_ns
 from api.route_restx.invite_routes import invite_ns
 from api.route_restx.activation_routes import activation_ns
 
-from api.routes import blueprints
 from constants import CONTAINER_NAMES
 import os
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
@@ -52,7 +49,6 @@ def create_app_with_restx() -> Flask:
     restx_api.add_namespace(employee_ns, path='/api/employees')
     restx_api.add_namespace(task_ns, path='/api/tasks')
     restx_api.add_namespace(timelog_ns, path='/api/timelogs')
-    restx_api.add_namespace(screenshot_ns, path='/api/screenshots')
     restx_api.add_namespace(auth_ns, path='/api/auth')
     restx_api.add_namespace(employer_ns, path='/api/employers')
     restx_api.add_namespace(invite_ns, path='/api/invite')

@@ -23,7 +23,6 @@ class Project(db.Model):
     employees = db.relationship('Employee', secondary=project_employee, back_populates='projects')
     tasks = db.relationship('Task', back_populates='project')
     time_logs = db.relationship('TimeLog', back_populates='project')
-    screenshots = db.relationship('Screenshot', back_populates='project')
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert project object to dictionary"""

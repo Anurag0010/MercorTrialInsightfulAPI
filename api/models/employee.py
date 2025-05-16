@@ -37,7 +37,6 @@ class Employee(db.Model):
     projects = db.relationship('Project', secondary=project_employee, back_populates='employees')
     tasks = db.relationship('Task', secondary=task_employee, back_populates='employees')
     time_logs = db.relationship('TimeLog', back_populates='employee')
-    screenshots = db.relationship('Screenshot', back_populates='employee')
 
     def set_password(self, password: str) -> None:
         """Set password hash for employee"""

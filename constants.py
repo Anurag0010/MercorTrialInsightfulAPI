@@ -10,9 +10,8 @@ REFRESH_TOKEN_EXPIRY_MINUTES: int = 24 * 60 * 7  # 7 days (60 * 24 * 7)
 
 # Admin configuration
 ALLOWED_ADMIN_EMAILS: List[str] = [
-    'admin@windsurf.com',
-    'superadmin@windsurf.com',
-    'support@windsurf.com'
+    'pranav.pieces@gmail.com',
+    'an1gupta0693@gmail.com',
 ]
 
 SCREENSHOT_STORAGE_CONTAINER: str = 'screenshots'
