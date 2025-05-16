@@ -3,7 +3,7 @@ from azure.storage.blob import BlobServiceClient, ContentSettings
 
 class AzureBlobStorage:
     def __init__(self):
-        connection_string = os.environ.get('AZURE_BLOB_CONNECTION_STRING')
+        connection_string = os.environ.get('AZURE_STORAGE_CONNECTION_STRING')
         self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 
     def upload_file(self, container_name: str, blob_name: str, file_data: bytes, content_type: str = None) -> str:

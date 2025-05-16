@@ -25,7 +25,6 @@ project_summary_model = api.model('ProjectSummary', {
 
 projectAssignment_model = api.model('ProjectAssignment', {
     'project_id': fields.Integer(required=True, description='Project ID to assign'),
-    'employee_id': fields.Integer(required=True, description='Employee ID to assign to')
 })
 
 taskAssignment_model = api.model('TaskAssignment', {
@@ -223,17 +222,14 @@ class EmployeeProjects(Resource):
 
     # New endpoint to assign a project to an employee
     @api.doc(description='Assign a project to an employee')
-    @api.expect(projectAssignment_model)
-    @api.marshal_with(projectAssignment_model)
     @api.response(201, 'Project successfully assigned')
     @api.response(400, 'Validation Error')
     @api.response(403, 'Forbidden')
     @api.response(404, 'Not Found')
     @role_required(['admin', 'employer'])
-    def post(self):
+    def post(self, employee_id):
         """Assign a project to an employee (Admin or the employee themselves)"""
         # Check permissions        
-        employee_id = api.payload['employee_id']
         project_id = api.payload['project_id'] 
         
         # Find the employee
@@ -275,6 +271,39 @@ class EmployeeProjects(Resource):
         except Exception as e:
             db.session.rollback()
             abort(500, f'Failed to assign project: {str(e)}')
+
+    @api.doc(description='Unassign a project from an employee')
+    @api.response(204, 'Project successfully unassigned')
+    @api.response(403, 'Forbidden')
+    @api.response(404, 'Not Found')
+    @role_required(['admin', 'employer'])
+    def delete(self, employee_id):
+        """Unassign a project from an employee (Admin or Employer only)"""
+        project_id = None
+        if api.payload and 'project_id' in api.payload:
+            project_id = api.payload['project_id']
+        elif hasattr(api, 'args') and 'project_id' in api.args:
+            project_id = api.args['project_id']
+        if not project_id:
+            abort(400, 'Project ID is required to unassign')
+        from api.models.project import Project
+        employee = Employee.query.get_or_404(employee_id)
+        project = Project.query.get_or_404(project_id)
+        # Only allow if the current user is the employer who owns this project or admin
+        identity = get_jwt()
+        if identity.get('role', identity.get('type')) == 'employer' and project.employer_id != identity['id']:
+            abort(403, 'You do not have permission to unassign this project')
+        if project not in employee.projects:
+            abort(404, 'Employee is not assigned to this project')
+        try:
+            employee.projects.remove(project)
+            # Optionally, also remove all tasks from this project from the employee
+            employee.tasks = [t for t in employee.tasks if t.project_id != project_id]
+            db.session.commit()
+            return '', 204
+        except Exception as e:
+            db.session.rollback()
+            abort(500, f'Failed to unassign project: {str(e)}')
 
 
 @api.route('/<int:employee_id>/tasks')
@@ -353,37 +382,39 @@ class EmployeeTasks(Resource):
             db.session.rollback()
             abort(500, f'Failed to assign task: {str(e)}')
 
-
-# Example endpoints demonstrating role-based access control
-@api.route('/admin-only')
-class AdminOnlyEndpoint(Resource):
-    @api.doc(description='This endpoint can only be accessed by admin users')
-    @role_required('admin')
-    def get(self):
-        """Admin only endpoint"""
-        return {'message': 'You have admin access'}
-
-@api.route('/employee-only')
-class EmployeeOnlyEndpoint(Resource):
-    @api.doc(description='This endpoint can only be accessed by employee users')
-    @check_mac_address
-    @employee_required
-    def get(self):
-        """Employee only endpoint"""
+    @api.doc(description='Unassign a task from an employee')
+    @api.response(204, 'Task successfully unassigned')
+    @api.response(403, 'Forbidden')
+    @api.response(404, 'Not Found')
+    @role_required(['admin', 'employer'])
+    def delete(self, employee_id):
+        """Unassign a task from an employee (Admin or Employer only)"""
+        task_id = None
+        if api.payload and 'task_id' in api.payload:
+            task_id = api.payload['task_id']
+        elif hasattr(api, 'args') and 'task_id' in api.args:
+            task_id = api.args['task_id']
+        if not task_id:
+            abort(400, 'Task ID is required to unassign')
+        from api.models.task import Task
+        employee = Employee.query.get_or_404(employee_id)
+        task = Task.query.get_or_404(task_id)
+        # Only allow if the current user is the employer who owns this task's project or admin
         identity = get_jwt()
-        return {'message': f'Hello employee #{identity["id"]}, you have employee access'}
+        if identity.get('role', identity.get('type')) == 'employer' and task.project.employer_id != identity['id']:
+            abort(403, 'You do not have permission to unassign this task')
+        if task not in employee.tasks:
+            abort(404, 'Employee is not assigned to this task')
+        try:
+            employee.tasks.remove(task)
+            db.session.commit()
+            return '', 204
+        except Exception as e:
+            db.session.rollback()
+            abort(500, f'Failed to unassign task: {str(e)}')
 
-@api.route('/employer-only')
-class EmployerOnlyEndpoint(Resource):
-    @api.doc(description='This endpoint can only be accessed by employer users')
-    @employer_required
-    def get(self):
-        """Employer only endpoint"""
-        identity = get_jwt()
-        return {'message': f'Hello employer #{identity["id"]}, you have employer access'}
 
-@api.route('/multi-role')
-class MultiRoleEndpoint(Resource):
+
     @api.doc(description='This endpoint can be accessed by both employees and employers')
     @role_required(['employee', 'employer'])
     def get(self):

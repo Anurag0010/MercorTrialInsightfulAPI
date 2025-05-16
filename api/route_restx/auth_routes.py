@@ -121,7 +121,7 @@ class EmployeeLogin(Resource):
         if not mac_address:
             abort(400, 'mac_address is required')
         # Find employee by username
-        employee: Optional[Employee] = Employee.query.filter_by(username=data['username']).first()
+        employee: Optional[Employee] = Employee.query.filter_by(email=data['email']).first()
         if not employee or not employee.check_password(data['password']):
             abort(401, 'Invalid username or password')
         # Check if employee is active

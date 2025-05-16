@@ -14,7 +14,7 @@ def check_mac_address(fn: F) -> F:
     """
     @wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        identity = get_jwt_identity()
+        identity = get_jwt()
         if identity and identity.get('role') == 'employee':
             employee = Employee.query.get(identity['id'])
             if not employee or not employee.latest_mac_address:

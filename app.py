@@ -14,8 +14,8 @@ from api.route_restx.user_routes import api as user_ns
 from api.route_restx.project_routes import api as project_ns
 from api.route_restx.employee_routes import api as employee_ns
 from api.route_restx.task_routes import api as task_ns
-from api.route_restx.time_tracking_routes import api as timelog_ns
 from api.route_restx.auth_routes import api as auth_ns
+from api.route_restx.time_tracking_routes import api as timelog_ns
 from api.route_restx.employer_routes import api as employer_ns
 from api.route_restx.invite_routes import invite_ns
 from api.route_restx.activation_routes import activation_ns
