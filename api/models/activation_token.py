@@ -16,19 +16,19 @@ class ActivationToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(255), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    project_id = db.Column(db.Integer, nullable=False)
+    employee_id = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
     
     @staticmethod
-    def generate_token(email: str, project_id: int, expiry_hours: int = 48) -> str:
+    def generate_token(email: str, employee_id: int, expiry_hours: int = 48) -> str:
         """
         Generate a unique token for account activation
         
         Args:
             email: The email address of the employee
-            project_id: The ID of the project to assign the employee to
+            employee_id: The ID of the employee
             expiry_hours: Number of hours the token is valid for (default: 48)
             
         Returns:
@@ -47,7 +47,7 @@ class ActivationToken(db.Model):
         activation_token = ActivationToken(
             token=token,
             email=email,
-            project_id=project_id,
+            employee_id=employee_id,
             expires_at=expires_at
         )
         

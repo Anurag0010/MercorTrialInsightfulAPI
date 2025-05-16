@@ -13,12 +13,12 @@ password_parser.add_argument('password', type=str, required=True, help='New pass
 class ActivateEmployee(Resource):
     @activation_ns.expect(password_parser)
     def post(self, token):
-        args = password_parser.parse_args()
         employee = Employee.query.filter_by(activation_token=token, is_active=False).first()
         if not employee or not employee.activation_token_expiry or employee.activation_token_expiry < datetime.utcnow():
             return {"message": "Invalid or expired activation token."}, 400
 
         # Set password and activate account
+        args = password_parser.parse_args()
         employee.password_hash = bcrypt.hash(args['password'])
         employee.is_active = True
         employee.activation_token = None
