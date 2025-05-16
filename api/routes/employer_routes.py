@@ -1,4 +1,5 @@
 from flask import jsonify, request, current_app
+from api.models.employee import Employee
 from api.models.employer import Employer
 from api.models.project import Project
 from api.models.task import Task
@@ -189,6 +190,31 @@ def update_employer_profile():
         return jsonify({'error': str(e)}), 500
 
 # Project Management Routes
+@employer_bp.route('/employers/employees', methods=['GET'])
+@jwt_required()
+def get_employer_employees():
+    """Get all employees working on any project of the logged-in employer"""
+    try:
+        identity = get_jwt_identity()
+        if not identity or 'role' not in identity or identity['role'] != 'employer':
+            return jsonify({'error': 'Invalid token or not an employer'}), 401
+
+        employer = Employer.query.get(identity['id'])
+        if not employer:
+            return jsonify({'error': 'Employer not found'}), 404
+
+        # Get all projects for this employer
+        projects = Project.query.filter_by(employer_id=employer.id).all()
+        project_ids = [p.id for p in projects]
+
+        # Get all employees assigned to any of these projects (using association table)
+        employees = Employee.query.join(Employee.projects).filter(Project.id.in_(project_ids)).distinct().all()
+
+        return jsonify([emp.to_dict() for emp in employees]), 200
+    except Exception as e:
+        current_app.logger.error(f'Error getting employer employees: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
 @employer_bp.route('/employers/projects', methods=['GET'])
 @jwt_required()
 def get_employer_projects():

@@ -6,7 +6,7 @@ from typing import List
 
 # JWT Authentication constants
 ACCESS_TOKEN_EXPIRY_MINUTES: int = 60  # 1 hour
-REFRESH_TOKEN_EXPIRY_MINUTES: int = 10080  # 7 days (60 * 24 * 7)
+REFRESH_TOKEN_EXPIRY_MINUTES: int = 24 * 60 * 7  # 7 days (60 * 24 * 7)
 
 # Admin configuration
 ALLOWED_ADMIN_EMAILS: List[str] = [

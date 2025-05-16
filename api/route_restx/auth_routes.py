@@ -16,6 +16,7 @@ api = Namespace('auth', description='Authentication operations')
 employee_login_model = api.model('EmployeeLogin', {
     'username': fields.String(required=True, description='Employee username'),
     'password': fields.String(required=True, description='Employee password'),
+    'mac_address': fields.String(required=True, description='Employee mac address'),
 })
 
 employee_register_model = api.model('EmployeeRegister', {
@@ -53,6 +54,21 @@ token_model = api.model('Token', {
     'user_type': fields.String(description='Type of user (employee, employer, or admin)'),
     'user_id': fields.Integer(description='User ID'),
 })
+
+def check_mac_address(func):
+    """Decorator to ensure JWT mac_address matches employee's latest_mac_address."""
+    from functools import wraps
+    from flask_jwt_extended import get_jwt_identity
+    def wrapper(*args, **kwargs):
+        identity = get_jwt_identity()
+        if identity.get('role') == 'employee':
+            employee = Employee.query.get(identity['id'])
+            if not employee or not employee.latest_mac_address:
+                return {'code': 'Re-login', 'message': 'Re-login required (no MAC address set)'}, 401
+            if identity.get('mac_address') != employee.latest_mac_address:
+                return {'code': 'Re-login', 'message': 'Re-login required (MAC mismatch)'}, 401
+        return func(*args, **kwargs)
+    return wraps(func)(wrapper)
 
 # Routes for employee authentication
 @api.route('/employee/register')
@@ -99,36 +115,38 @@ class EmployeeLogin(Resource):
     def post(self) -> Tuple[Dict[str, Any], int]:
         """Login for employees"""
         data: Dict[str, Any] = api.payload
-        
         if not data:
             abort(400, 'No input data provided')
-            
+        mac_address = data.get('mac_address')
+        if not mac_address:
+            abort(400, 'mac_address is required')
         # Find employee by username
         employee: Optional[Employee] = Employee.query.filter_by(username=data['username']).first()
         if not employee or not employee.check_password(data['password']):
             abort(401, 'Invalid username or password')
-            
         # Check if employee is active
         if not employee.active:
             abort(403, 'Your account is deactivated. Please contact admin.')
-        
-        # Generate tokens with identity containing role
+        # Update latest_mac_address
+        employee.latest_mac_address = mac_address
+        db.session.commit()
+        # Generate tokens with identity containing role and mac_address
         identity: Dict[str, Any] = {
             'id': employee.id,
-            'role': 'employee',  # New field for role-based auth
-            'username': employee.username
+            'role': 'employee',
+            'username': employee.username,
+            'mac_address': mac_address
         }
-        
         access_token: str = create_access_token(
-            identity=identity,
+            identity=str(employee.id),
+            additional_claims=identity,
             expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)
         )
-        
         refresh_token: str = create_refresh_token(
-            identity=identity,
+            identity=str(employee.id),
+            additional_claims=identity,
             expires_delta=timedelta(minutes=REFRESH_TOKEN_EXPIRY_MINUTES)
         )
-        
         return {
             'access_token': access_token,
             'refresh_token': refresh_token,
@@ -195,7 +213,8 @@ class EmployerLogin(Resource):
             abort(403, 'Your account is deactivated. Please contact admin.')
         
         # Generate tokens with identity containing role
-        identity: Dict[str, Any] = {
+        identity = str(employer.id)
+        claims: Dict[str, Any] = {
             'id': employer.id,
             'role': 'employer',  # New field for role-based auth
             'email': employer.email
@@ -203,11 +222,13 @@ class EmployerLogin(Resource):
         
         access_token: str = create_access_token(
             identity=identity,
+            additional_claims=claims,
             expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)
         )
         
         refresh_token: str = create_refresh_token(
             identity=identity,
+            additional_claims=claims,
             expires_delta=timedelta(minutes=REFRESH_TOKEN_EXPIRY_MINUTES)
         )
         
@@ -243,7 +264,8 @@ class AdminLogin(Resource):
             abort(401, 'Invalid email or password')
         
         # Generate tokens with identity containing role
-        identity: Dict[str, Any] = {
+        identity: str = str(admin.id)
+        claims: Dict[str, Any] = {
             'id': admin.id,
             'type': 'admin',  # For backward compatibility 
             'role': 'admin',  # Admin role for role-based auth
@@ -252,11 +274,13 @@ class AdminLogin(Resource):
         
         access_token: str = create_access_token(
             identity=identity,
+            additional_claims=claims,
             expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)
         )
         
         refresh_token: str = create_refresh_token(
             identity=identity,
+            additional_claims=claims,
             expires_delta=timedelta(minutes=REFRESH_TOKEN_EXPIRY_MINUTES)
         )
         
@@ -275,18 +299,19 @@ class TokenRefresh(Resource):
     @api.response(401, 'Invalid refresh token')
     def post(self) -> Tuple[Dict[str, Any], int]:
         """Refresh access token"""
-        identity: Dict[str, Any] = get_jwt_identity()
+        claims: Dict[str, Any] = get_jwt_identity()
         
-        if not identity or ('role' not in identity):
+        if not claims or ('role' not in claims):
             abort(401, 'Invalid token')
             
         access_token: str = create_access_token(
-            identity=identity,
+            identity=claims['id'],
+            additional_claims=claims,
             expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)
         )
         
         return {
             'access_token': access_token,
-            'user_type': identity.get('role', identity.get('type', 'unknown')),
-            'user_id': identity['id']
+            'user_type': claims.get('role', claims.get('type', 'unknown')),
+            'user_id': claims['id']
         }, 200

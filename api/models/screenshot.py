@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import Optional
 from database import db
 
-class Screenshot(db.Model):
+# DEPRECATED: Screenshot model is now merged into TimeLog. This file is retained for migration reference only.
+# class Screenshot(db.Model):
     __tablename__ = 'screenshots'
     __table_args__ = (
         db.Index('idx_screenshot_employee', 'employee_id'),

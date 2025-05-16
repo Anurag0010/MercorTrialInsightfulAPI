@@ -21,6 +21,7 @@ class ProjectList(Resource):
 
     @api.expect(project_model)
     @api.marshal_with(project_model, code=201)
+    @role_required(['admin'])
     def post(self) -> tuple[Project, int]:
         """Create a new project"""
         data = api.payload

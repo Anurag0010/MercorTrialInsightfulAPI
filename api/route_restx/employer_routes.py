@@ -3,7 +3,8 @@ from api.models.employer import Employer
 from api.models.project import Project
 from api.models.task import Task
 from database import db
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import get_jwt, jwt_required, get_jwt_identity
+from .auth_decorators import employer_required, admin_required
 
 api = Namespace('employers', description='Employer operations')
 
@@ -72,12 +73,12 @@ task_model = api.inherit('Task', task_input_model, {
 
 # Helper function to check if the authenticated user is an employer
 def get_authorized_employer():
-    identity = get_jwt_identity()
+    claims = get_jwt()
     
-    if not identity or 'type' not in identity or identity['type'] != 'employer':
+    if not claims or 'role' not in claims or claims['role'] != 'employer':
         abort(403, 'This operation is only available to employers')
         
-    employer = Employer.query.get(identity['id'])
+    employer = Employer.query.get(claims['id'])
     if not employer:
         abort(404, 'Employer account not found')
         
@@ -86,6 +87,7 @@ def get_authorized_employer():
 @api.route('/profile')
 class EmployerProfile(Resource):
     @jwt_required()
+    @employer_required
     @api.marshal_with(employer_model)
     @api.response(200, 'Success')
     @api.response(403, 'Not authorized')
@@ -96,6 +98,7 @@ class EmployerProfile(Resource):
         return employer
     
     @jwt_required()
+    @employer_required
     @api.expect(employer_update_model)
     @api.marshal_with(employer_model)
     @api.response(200, 'Profile updated')
@@ -127,6 +130,7 @@ class EmployerProfile(Resource):
 @api.route('/projects')
 class EmployerProjects(Resource):
     @jwt_required()
+    @employer_required
     @api.marshal_list_with(project_model)
     @api.response(200, 'Success')
     @api.response(403, 'Not authorized')
@@ -151,6 +155,7 @@ class EmployerProjects(Resource):
         return result
     
     @jwt_required()
+    @employer_required
     @api.expect(project_input_model)
     @api.marshal_with(project_model, code=201)
     @api.response(201, 'Project created')
@@ -188,6 +193,7 @@ class EmployerProjects(Resource):
 @api.param('project_id', 'The project identifier')
 class EmployerProjectDetail(Resource):
     @jwt_required()
+    @employer_required
     @api.marshal_with(project_detail_model)
     @api.response(200, 'Success')
     @api.response(403, 'Not authorized')
@@ -221,6 +227,7 @@ class EmployerProjectDetail(Resource):
         }
     
     @jwt_required()
+    @employer_required
     @api.expect(project_input_model)
     @api.marshal_with(project_model)
     @api.response(200, 'Project updated')
@@ -257,6 +264,7 @@ class EmployerProjectDetail(Resource):
         }
     
     @jwt_required()
+    @employer_required
     @api.response(204, 'Project deleted')
     @api.response(403, 'Not authorized')
     @api.response(404, 'Project not found')

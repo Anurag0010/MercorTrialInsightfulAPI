@@ -5,11 +5,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os
 from typing import List
-import csv
 from email.utils import make_msgid
-from openpyxl import Workbook
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import Alignment, Font
 
 class EmailSender:
     def __init__(self, smtp_server: str, smtp_port: int, smtp_user: str, smtp_password: str, use_tls: bool = True):        
@@ -74,25 +70,4 @@ class EmailSender:
         except Exception as e:
             print(f"Failed to send email: {str(e)}")
 
-        for col in worksheet.columns:
-            max_length = 0
-            column = col[0].column_letter  # Get the column name
-            column_name = col[0].value
-            column_alignment = EXCEL_COL_PROPS.get(column_name, EXCEL_COL_PROPS["__default__"]).get("alignment", "right")
-            first_line_alignment = EXCEL_COL_PROPS.get(column_name, EXCEL_COL_PROPS["__default__"]).get("first_line_alignment", "right")
-            for i, cell in enumerate(col):
-                try:
-                    if i == 0:
-                        cell.alignment = Alignment(horizontal=first_line_alignment)
-                        cell.font = Font(bold=True)
-                    else:
-                        cell.alignment = Alignment(horizontal=column_alignment)
-                    if cell.value:
-                        max_length = max(max_length, len(str(cell.value)))
-                except:
-                    pass
-
-            adjusted_width = (max_length + 2) * 1.2 # Adding a little extra space for readability
-            worksheet.column_dimensions[column].width = adjusted_width    
-    
-    
+        

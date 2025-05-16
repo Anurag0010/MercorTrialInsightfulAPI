@@ -1,8 +1,8 @@
 from flask_restx import Namespace, Resource, fields, abort
 from api.models.employee import Employee
 from database import db
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from api.route_restx.auth_decorators import role_required, employee_required, employer_required
+from flask_jwt_extended import jwt_required, get_jwt
+from api.route_restx.auth_decorators import role_required, employee_required, employer_required, check_mac_address
 
 api = Namespace('employees', description='Employee operations')
 
@@ -21,6 +21,16 @@ project_summary_model = api.model('ProjectSummary', {
     'name': fields.String(description='Project name'),
     'description': fields.String(description='Project description'),
     'task_count': fields.Integer(description='Number of tasks in the project')
+})
+
+projectAssignment_model = api.model('ProjectAssignment', {
+    'project_id': fields.Integer(required=True, description='Project ID to assign'),
+    'employee_id': fields.Integer(required=True, description='Employee ID to assign to')
+})
+
+taskAssignment_model = api.model('TaskAssignment', {
+    'task_id': fields.Integer(required=True, description='Task ID to assign'),
+    'employee_id': fields.Integer(required=True, description='Employee ID to assign to')
 })
 
 # Task summary model for nested responses
@@ -99,7 +109,7 @@ class EmployeeResource(Resource):
         employee : Employee = Employee.query.get_or_404(employee_id)
         
         # Get the identity of the current user
-        identity = get_jwt_identity()
+        identity = get_jwt()
         
         # If it's not an admin or employer, make sure the employee is only accessing their own record
         if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
@@ -134,7 +144,7 @@ class EmployeeResource(Resource):
     def put(self, employee_id: int) -> Employee:
         """Update an employee (full update)"""
         # Check if employee is updating their own record
-        identity = get_jwt_identity()
+        identity = get_jwt()
         if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
             abort(403, 'You can only update your own details')
             
@@ -147,7 +157,7 @@ class EmployeeResource(Resource):
     def patch(self, employee_id: int) -> Employee:
         """Update an employee (partial update)"""
         # Check if employee is updating their own record
-        identity = get_jwt_identity()
+        identity = get_jwt()
         if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
             abort(403, 'You can only update your own details.')
             
@@ -168,7 +178,7 @@ class EmployeeResource(Resource):
             employee.email = data['email']
         if 'role' in data:
             # Only allow admin to change roles
-            identity = get_jwt_identity()
+            identity = get_jwt()
             if identity.get('role', identity.get('type')) != 'admin':
                 abort(403, 'Only administrators can change roles')
             employee.role = data['role']
@@ -198,7 +208,7 @@ class EmployeeProjects(Resource):
         employee = Employee.query.get_or_404(employee_id)
         
         # Get the identity of the current user
-        identity = get_jwt_identity()
+        identity = get_jwt()
         
         # If it's an employee, make sure they are only accessing their own projects
         if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
@@ -213,20 +223,18 @@ class EmployeeProjects(Resource):
 
     # New endpoint to assign a project to an employee
     @api.doc(description='Assign a project to an employee')
-    @api.expect(api.model('ProjectAssignment', {
-        'project_id': fields.Integer(required=True, description='Project ID to assign')
-    }))
+    @api.expect(projectAssignment_model)
+    @api.marshal_with(projectAssignment_model)
     @api.response(201, 'Project successfully assigned')
     @api.response(400, 'Validation Error')
     @api.response(403, 'Forbidden')
     @api.response(404, 'Not Found')
-    @role_required(['admin', 'employee'])
-    def post(self, employee_id):
+    @role_required(['admin', 'employer'])
+    def post(self):
         """Assign a project to an employee (Admin or the employee themselves)"""
-        # Check permissions
-        identity = get_jwt_identity()
-        if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
-            abort(403, 'You can only assign projects to yourself')
+        # Check permissions        
+        employee_id = api.payload['employee_id']
+        project_id = api.payload['project_id'] 
         
         # Find the employee
         employee = Employee.query.get_or_404(employee_id)
@@ -280,7 +288,7 @@ class EmployeeTasks(Resource):
         employee = Employee.query.get_or_404(employee_id)
         
         # Get the identity of the current user
-        identity = get_jwt_identity()
+        identity = get_jwt()
         
         # If it's an employee, make sure they are only accessing their own tasks
         if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
@@ -298,21 +306,17 @@ class EmployeeTasks(Resource):
 
     # New endpoint to assign a task to an employee
     @api.doc(description='Assign a task to an employee')
-    @api.expect(api.model('TaskAssignment', {
-        'task_id': fields.Integer(required=True, description='Task ID to assign')
-    }))
+    @api.expect(taskAssignment_model)
+    @api.marshal_with(taskAssignment_model)
     @api.response(201, 'Task successfully assigned')
     @api.response(400, 'Validation Error')
     @api.response(403, 'Forbidden')
     @api.response(404, 'Not Found')
-    @role_required(['admin', 'employee'])
+    @role_required(['admin', 'employer'])
     def post(self, employee_id):
         """Assign a task to an employee (Admin or the employee themselves)"""
-        # Check permissions
-        identity = get_jwt_identity()
-        if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
-            abort(403, 'You can only assign tasks to yourself')
-        
+        employee_id = api.payload['employee_id']
+                
         # Find the employee
         employee = Employee.query.get_or_404(employee_id)
         
@@ -362,10 +366,11 @@ class AdminOnlyEndpoint(Resource):
 @api.route('/employee-only')
 class EmployeeOnlyEndpoint(Resource):
     @api.doc(description='This endpoint can only be accessed by employee users')
+    @check_mac_address
     @employee_required
     def get(self):
         """Employee only endpoint"""
-        identity = get_jwt_identity()
+        identity = get_jwt()
         return {'message': f'Hello employee #{identity["id"]}, you have employee access'}
 
 @api.route('/employer-only')
@@ -374,7 +379,7 @@ class EmployerOnlyEndpoint(Resource):
     @employer_required
     def get(self):
         """Employer only endpoint"""
-        identity = get_jwt_identity()
+        identity = get_jwt()
         return {'message': f'Hello employer #{identity["id"]}, you have employer access'}
 
 @api.route('/multi-role')
@@ -383,6 +388,6 @@ class MultiRoleEndpoint(Resource):
     @role_required(['employee', 'employer'])
     def get(self):
         """Multi-role endpoint (employees and employers)"""
-        identity = get_jwt_identity()
+        identity = get_jwt()
         user_type = identity.get('role', identity.get('type'))
         return {'message': f'Hello {user_type} #{identity["id"]}, you have access to this endpoint'}

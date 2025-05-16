@@ -16,7 +16,7 @@ class Employee(db.Model):
         {'schema': 'mercor'}
     )
     id: int = db.Column(db.Integer, primary_key=True)
-    username: str = db.Column(db.String(80), unique=True, nullable=False)
+    username: str = db.Column(db.String(80), nullable=True)
     password_hash: Optional[str] = db.Column(db.String(128), nullable=True)
     name: str = db.Column(db.String(80), nullable=False)
     email: str = db.Column(db.String(120), unique=True, nullable=False)
@@ -29,6 +29,9 @@ class Employee(db.Model):
     activation_token = db.Column(db.String(64), nullable=True, unique=True)
     activation_token_expiry = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=False)
+
+    # Device tracking
+    latest_mac_address = db.Column(db.String(32), nullable=True)  # Store latest MAC address used for login
     
     # Relationships
     projects = db.relationship('Project', secondary=project_employee, back_populates='employees')

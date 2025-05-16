@@ -25,6 +25,8 @@ from api.route_restx.activation_routes import activation_ns
 from api.routes import blueprints
 from constants import CONTAINER_NAMES
 import os
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required
+
 
 # Load environment variables
 load_dotenv()
@@ -104,6 +106,9 @@ def create_app() -> Flask:
 
 # Create the app instance
 app = create_app_with_restx()
+app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this in production
+jwt = JWTManager(app)  # Required initialization
+
 
 if __name__ == '__main__':
     for rule in app.url_map.iter_rules():
