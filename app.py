@@ -21,6 +21,7 @@ from api.route_restx.auth_routes import api as auth_ns
 from api.route_restx.employer_routes import api as employer_ns
 
 from api.routes import blueprints
+from constants import CONTAINER_NAMES
 import os
 
 # Load environment variables
@@ -53,7 +54,9 @@ def create_app_with_restx() -> Flask:
 
     # Initialize Azure Storage
     storage = AzureStorage(app)
-
+    init_azure_storage(storage)
+    app.extensions['azure_storage'] = storage
+    
     # Add error handlers
     @app.errorhandler(Exception)
     def handle_error(error: Exception) -> Tuple[Dict[str, str], int]:
@@ -64,6 +67,10 @@ def create_app_with_restx() -> Flask:
 
     return app
 
+def init_azure_storage(storage: AzureStorage) -> None:
+    for container in CONTAINER_NAMES:
+        storage.create_container(container)
+        
 def create_app() -> Flask:
     """Create and configure the Flask app with traditional routes"""
     # Initialize Flask app
@@ -97,4 +104,3 @@ app = create_app_with_restx()
 if __name__ == '__main__':
     for rule in app.url_map.iter_rules():
         print(rule)
-    app.run(debug=True)

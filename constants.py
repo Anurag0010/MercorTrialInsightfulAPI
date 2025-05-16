@@ -15,4 +15,7 @@ ALLOWED_ADMIN_EMAILS: List[str] = [
     'support@windsurf.com'
 ]
 
+SCREENSHOT_STORAGE_CONTAINER: str = 'screenshots'
+
+CONTAINER_NAMES = [ SCREENSHOT_STORAGE_CONTAINER ]
 # Add more constants below as needed
