@@ -211,6 +211,145 @@ class EmployeeProjects(Resource):
             'task_count': len(p.tasks)
         } for p in employee.projects]
 
+    # New endpoint to assign a project to an employee
+    @api.doc(description='Assign a project to an employee')
+    @api.expect(api.model('ProjectAssignment', {
+        'project_id': fields.Integer(required=True, description='Project ID to assign')
+    }))
+    @api.response(201, 'Project successfully assigned')
+    @api.response(400, 'Validation Error')
+    @api.response(403, 'Forbidden')
+    @api.response(404, 'Not Found')
+    @role_required(['admin', 'employee'])
+    def post(self, employee_id):
+        """Assign a project to an employee (Admin or the employee themselves)"""
+        # Check permissions
+        identity = get_jwt_identity()
+        if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
+            abort(403, 'You can only assign projects to yourself')
+        
+        # Find the employee
+        employee = Employee.query.get_or_404(employee_id)
+        
+        # Get the project ID from the request
+        if not api.payload or 'project_id' not in api.payload:
+            abort(400, 'Project ID is required')
+        
+        project_id = api.payload['project_id']
+        
+        # Import needed models
+        from api.models.project import Project
+        from api.models.task import Task
+        
+        # Find the project
+        project = Project.query.get_or_404(project_id)
+        
+        # Check if the employee is already assigned to this project
+        if project in employee.projects:
+            return {'message': f'Employee already assigned to project {project.name}'}, 200
+        
+        try:
+            # Assign the project to the employee
+            employee.projects.append(project)
+            
+            # Assign all tasks from this project to the employee as well
+            tasks = Task.query.filter_by(project_id=project_id).all()
+            for task in tasks:
+                if task not in employee.tasks:
+                    employee.tasks.append(task)
+            
+            db.session.commit()
+            
+            return {
+                'message': f'Project {project.name} successfully assigned to {employee.name}',
+                'tasks_assigned': len(tasks)
+            }, 201
+        except Exception as e:
+            db.session.rollback()
+            abort(500, f'Failed to assign project: {str(e)}')
+
+
+@api.route('/<int:employee_id>/tasks')
+@api.param('employee_id', 'The employee identifier')
+@api.response(404, 'Employee not found')
+class EmployeeTasks(Resource):
+    @api.marshal_list_with(task_summary_model)
+    @jwt_required()
+    def get(self, employee_id):
+        """Get all tasks for an employee"""
+        employee = Employee.query.get_or_404(employee_id)
+        
+        # Get the identity of the current user
+        identity = get_jwt_identity()
+        
+        # If it's an employee, make sure they are only accessing their own tasks
+        if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
+            abort(403, 'You can only access your own tasks')
+        
+        return [{
+            'id': t.id,
+            'title': t.name,
+            'status': t.status,
+            'hourly_rate': t.project.hourly_rate if t.project else None,
+            'total_hours': t.minutes_spent / 60 if t.minutes_spent else 0,
+            'project_id': t.project_id,
+            'total_cost': (t.minutes_spent / 60) * t.project.hourly_rate if t.minutes_spent and t.project else 0
+        } for t in employee.tasks]
+
+    # New endpoint to assign a task to an employee
+    @api.doc(description='Assign a task to an employee')
+    @api.expect(api.model('TaskAssignment', {
+        'task_id': fields.Integer(required=True, description='Task ID to assign')
+    }))
+    @api.response(201, 'Task successfully assigned')
+    @api.response(400, 'Validation Error')
+    @api.response(403, 'Forbidden')
+    @api.response(404, 'Not Found')
+    @role_required(['admin', 'employee'])
+    def post(self, employee_id):
+        """Assign a task to an employee (Admin or the employee themselves)"""
+        # Check permissions
+        identity = get_jwt_identity()
+        if identity.get('role', identity.get('type')) == 'employee' and identity['id'] != employee_id:
+            abort(403, 'You can only assign tasks to yourself')
+        
+        # Find the employee
+        employee = Employee.query.get_or_404(employee_id)
+        
+        # Get the task ID from the request
+        if not api.payload or 'task_id' not in api.payload:
+            abort(400, 'Task ID is required')
+        
+        task_id = api.payload['task_id']
+        
+        # Import needed models
+        from api.models.task import Task
+        
+        # Find the task
+        task = Task.query.get_or_404(task_id)
+        
+        # Check if the employee is already assigned to this task
+        if task in employee.tasks:
+            return {'message': f'Employee already assigned to task {task.name}'}, 200
+        
+        # Check if the employee is assigned to the project of this task
+        if task.project not in employee.projects:
+            employee.projects.append(task.project)
+        
+        try:
+            # Assign the task to the employee
+            employee.tasks.append(task)
+            db.session.commit()
+            
+            return {
+                'message': f'Task {task.name} successfully assigned to {employee.name}',
+                'project': task.project.name
+            }, 201
+        except Exception as e:
+            db.session.rollback()
+            abort(500, f'Failed to assign task: {str(e)}')
+
+
 # Example endpoints demonstrating role-based access control
 @api.route('/admin-only')
 class AdminOnlyEndpoint(Resource):

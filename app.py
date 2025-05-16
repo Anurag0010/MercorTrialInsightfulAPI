@@ -108,3 +108,4 @@ app = create_app_with_restx()
 if __name__ == '__main__':
     for rule in app.url_map.iter_rules():
         print(rule)
+    app.run(debug= os.environ.get('FLASK_ENV', 'PRD') != 'PRD')

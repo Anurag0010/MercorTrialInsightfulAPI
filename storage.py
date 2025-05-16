@@ -24,6 +24,15 @@ class AzureStorage:
         if not self.blob_service_client:
             raise Exception("Azure Storage not configured")
         container_client = self.blob_service_client.get_container_client(container_name)
+        # check if container exists
+        try:
+            container_client.get_container_properties()
+            print(f"Container '{container_name}' already exists.")
+            return
+        except Exception as e:
+            if "404" not in str(e):
+                print(f"Error checking container: {e}")
+                raise
         try:
             container_client.create_container()
         except Exception as e:
