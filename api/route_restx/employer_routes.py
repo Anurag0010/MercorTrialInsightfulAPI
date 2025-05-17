@@ -42,7 +42,8 @@ project_model = api.inherit('Project', project_input_model, {
     'id': fields.Integer(readOnly=True, description='Project ID'),
     'created_at': fields.DateTime(description='Creation timestamp'),
     'updated_at': fields.DateTime(description='Last update timestamp'),
-    'employee_count': fields.Integer(description='Number of assigned employees')
+    'employee_count': fields.Integer(description='Number of assigned employees'),
+    'task_count': fields.Integer(description='Number of tasks')
 })
 
 project_detail_model = api.inherit('ProjectDetail', project_model, {
