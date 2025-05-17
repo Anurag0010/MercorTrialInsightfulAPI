@@ -430,4 +430,27 @@ class EmployerEmployees(Resource):
                     })
         
         return employees
-    
+
+@api.route('/employees/<int:employee_id>/tasks/<task_id>')
+class EmployerEmployees(Resource):
+    @jwt_required()
+    @employer_required
+    @api.response(200, 'Success')
+    @api.response(403, 'Not authorized')
+    def delete(self, employee_id, task_id):
+        claims = get_jwt()
+        employer_id = claims['id']
+        # Check if employer owns the task
+        task = Task.query.filter_by(id=task_id).first()
+        if task is None:
+            abort(404, 'Task not found')
+        if task.project.employer_id != employer_id:
+            abort(403, 'You are not authorized to delete this task')
+        # Check if employee is assigned to the task
+        employee = task.employees.filter_by(id=employee_id).first()
+        if employee is None:
+            abort(404, 'Employee not assigned to this task')
+        # Remove employee from task
+        task.employees.remove(employee)
+        db.session.commit()
+        return {'message': 'Employee removed from task successfully'}, 200
