@@ -13,6 +13,7 @@ class EmailService:
         
     def send_activation_email(self, user_email, activation_url):
         # Create the HTML part with a clickable link
+        time_tracker_url = os.getenv('LOCAL_TIME_TRACKER_APP_LINK')
         html_body = f"""
         <html>
         <body>
@@ -21,6 +22,8 @@ class EmailService:
             <p><a href="{activation_url}">Activate Account</a></p>
             <p>If the link doesn’t work, copy and paste this URL into your browser:</p>
             <p>{activation_url}</p>
+            <p>Please download your <a href="{time_tracker_url}">time tracker</a> to begin working on projects.</p>
+            <p>Thank you for joining us!</p>
         </body>
         </html>
         """        

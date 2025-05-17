@@ -66,7 +66,6 @@ class EmployeeList(Resource):
                 'id': e.id,
                 'name': e.name,
                 'email': e.email,
-                'role': e.role,
                 'project_count': len(e.projects),
                 'task_count': len(e.tasks)
             }
@@ -92,7 +91,6 @@ class EmployeeList(Resource):
         employee = Employee(
             name=data['name'],
             email=data['email'],
-            role=data.get('role')
         )
         
         db.session.add(employee)

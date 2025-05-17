@@ -148,7 +148,8 @@ class EmployerProjects(Resource):
                 'hourly_rate': float(project.hourly_rate) if project.hourly_rate else None,
                 'created_at': project.created_at,
                 'updated_at': project.updated_at,
-                'employee_count': len(project.employees)
+                'employee_count': len(project.employees),
+                'task_count': len(project.tasks)
             }
             result.append(project_data)
             
