@@ -476,7 +476,10 @@ class EmployeeTasks(Resource):
                 'project_id': task.project_id,
                 'project_name': task.project.name,
                 'project_hourly_rate': float(task.project.hourly_rate) if task.project.hourly_rate else None,
-                'project_employee_count': len(task.project.employees)
+                'project_employee_count': len(task.project.employees),
+                'task_spent_time_in_minutes': task.minutes_spent,
+                'task_spent_time_in_minutes_real': task.minutes_spent / 60,
+                'task_spent_time_in_hours': task.minutes_spent / 60,
             })
         return full_tasks
 

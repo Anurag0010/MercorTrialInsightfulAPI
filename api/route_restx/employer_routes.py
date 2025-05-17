@@ -398,7 +398,7 @@ class EmployerEmployees(Resource):
     @api.response(403, 'Not authorized')
     def get(self):
         claims = get_jwt()
-        employer_id = claims['employer_id']
+        employer_id = claims['id']
         projects = Project.query.filter_by(employer_id=employer_id).all()  
         employees = []
         employee_ids = set()
@@ -406,7 +406,12 @@ class EmployerEmployees(Resource):
             for employee in project.employees:
                 if employee.id not in employee_ids:
                     employee_ids.add(employee.id)
-                    employees.append(employee)
+                    employees.append({
+                        'id': employee.id,
+                        'name': employee.name,
+                        'email': employee.email,
+                        'username': employee.username
+                    })
         
         return employees
     
