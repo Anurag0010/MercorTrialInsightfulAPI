@@ -72,33 +72,6 @@ def create_app_with_restx() -> Flask:
 def init_azure_storage(storage: AzureStorage) -> None:
     for container in CONTAINER_NAMES:
         storage.create_container(container)
-        
-def create_app() -> Flask:
-    """Create and configure the Flask app with traditional routes"""
-    # Initialize Flask app
-    app = Flask(__name__)
-    app.secret_key = 'your_secret_key'
-
-    # app.config.from_object(Config)
-    # CORS(app)
-    # init_db(app)
-    # migrate = Migrate(app, db)
-    # storage = AzureStorage(app)
-
-    # Register all blueprints (traditional routes)
-    from api.routes import blueprints
-    for blueprint, url_prefix in blueprints:
-        app.register_blueprint(blueprint)
-
-    # Add error handlers
-    @app.errorhandler(Exception)
-    def handle_error(error: Exception) -> Tuple[Dict[str, str], int]:
-        code: int = 500
-        if hasattr(error, 'code'):
-            code = error.code
-        return {'message': str(error), 'error': type(error).__name__}, code
-
-    return app
 
 # Create the app instance
 app = create_app_with_restx()
@@ -107,6 +80,4 @@ jwt = JWTManager(app)  # Required initialization
 
 
 if __name__ == '__main__':
-    for rule in app.url_map.iter_rules():
-        print(rule)
     app.run(debug= os.environ.get('FLASK_ENV', 'PRD') != 'PRD')

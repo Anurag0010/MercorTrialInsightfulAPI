@@ -406,11 +406,17 @@ class EmployerEmployees(Resource):
             for employee in project.employees:
                 if employee.id not in employee_ids:
                     employee_ids.add(employee.id)
+                    tasks: list[Task] = Task.query.join(Task.employees).filter_by(id=employee.id).all()
+                    total_seconds = sum(task.minutes_spent for task in tasks)
+                    total_cost = sum((task.minutes_spent // 3600) * task.project.hourly_rate for task in tasks)
+                    # make total seconds to pretty form of x hours and y minutes
                     employees.append({
                         'id': employee.id,
                         'name': employee.name,
                         'email': employee.email,
-                        'username': employee.username
+                        'username': employee.username,
+                        'total_seconds': total_seconds,
+                        'total_cost': total_cost
                     })
         
         return employees

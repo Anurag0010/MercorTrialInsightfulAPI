@@ -346,9 +346,7 @@ class EmployeeTasks(Resource):
     @api.response(404, 'Not Found')
     @role_required(['admin', 'employer'])
     def post(self, employee_id):
-        """Assign a task to an employee (Admin or the employee themselves)"""
-        employee_id = api.payload['employee_id']
-                
+        """Assign a task to an employee (Admin or the employee themselves)"""                
         # Find the employee
         employee = Employee.query.get_or_404(employee_id)
         
