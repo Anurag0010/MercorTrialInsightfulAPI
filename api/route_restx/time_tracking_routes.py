@@ -44,12 +44,6 @@ upload_parser.add_argument('file', location='files', type=FileStorage, required=
 
 @api.route('/')
 class TimeLogList(Resource):
-    @api.marshal_list_with(time_log_model)
-    @role_required(['admin'])
-    def get(self) -> list[TimeLog]:
-        """Get all time logs"""
-        return TimeLog.query.all()
-
     @api.expect(upload_parser)
     @role_required(['employee', 'employer'])
     @check_mac_address
@@ -103,9 +97,32 @@ class TimeLogList(Resource):
 
     @api.marshal_list_with(time_log_model)
     @role_required(['admin', 'employer'])
-    def list(self, project_id: int, task_id: int, start_date: str, end_date: str, page: int, page_size: int) -> list[TimeLog]:
+    def get(self) -> list[TimeLog]:
         """Get time logs for a project and task within a date range"""
-        # Only max duration of 1 hr duration screenshots are allowed
+        from flask import request
+        project_id = request.args.get('project_id', type=int)
+        task_id = request.args.get('task_id', type=int)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        page = request.args.get('page', default=1, type=int)
+        page_size = request.args.get('page_size', default=10, type=int)
+        
         time_logs = TimeLog.query.filter_by(project_id=project_id, task_id=task_id).filter(TimeLog.start_time.between(start_date, end_date)).all()
         time_logs = time_logs[(page - 1) * page_size: page * page_size]
+        time_logs = [{
+            'id': time_log.id,
+            'employee_id': time_log.employee_id,
+            'task_id': time_log.task_id,
+            'project_id': time_log.project_id,
+            'start_time': time_log.start_time,
+            'end_time': time_log.end_time,
+            'duration': time_log.duration,
+            'is_screenshot_permission_enabled': time_log.is_screenshot_permission_enabled,
+            'ip_address': time_log.ip_address,
+            'mac_address': time_log.mac_address,
+            'file_path': time_log.file_path,
+            'image_url': time_log.image_url,
+            'captured_at': time_log.captured_at
+        } for time_log in time_logs]
+        time_logs = sorted(time_logs, key=lambda x: x['start_time'], reverse=True) 
         return time_logs
