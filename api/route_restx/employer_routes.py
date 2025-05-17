@@ -2,9 +2,11 @@ from flask_restx import Namespace, Resource, fields, abort
 from api.models.employer import Employer
 from api.models.project import Project
 from api.models.task import Task
+from api.models.time_log import TimeLog
 from database import db
 from flask_jwt_extended import get_jwt, jwt_required, get_jwt_identity
 from .auth_decorators import employer_required, admin_required
+from datetime import datetime, timedelta
 
 api = Namespace('employers', description='Employer operations')
 
@@ -455,3 +457,104 @@ class EmployerEmployees(Resource):
         task.employees.remove(employee)
         db.session.commit()
         return {'message': 'Employee removed from task successfully'}, 200
+    
+@api.route('/summary')
+class EmployerSummary(Resource):
+    @jwt_required()
+    @employer_required
+    @api.response(200, 'Success')
+    @api.response(403, 'Not authorized')
+    def get(self):
+        claims = get_jwt()
+        employer_id = claims['id']
+        
+        # Fetching summary for this employer, How many projects, employees and tasks
+        # Recent top 5 activities from timeLog from employees
+        # Total cost of projects
+        # Total time spent on projects
+        projects = Project.query.filter_by(employer_id=employer_id).all()
+        # join through projects to get all tasks under this employer
+        project_ids = [project.id for project in projects]
+        tasks = Task.query.filter(Task.project_id.in_(project_ids)).all()
+        
+        # employee count
+        emp_ids = set()
+        for task in tasks:
+            for employee in task.employees:
+                emp_ids.add(employee.id)
+        
+        employee_count = len(emp_ids)
+                
+        # recent activities
+        recent_activities = TimeLog.query.filter(TimeLog.project_id.in_(project_ids)).order_by(TimeLog.start_time.desc()).limit(5).all()
+        recent_activities = [
+            {
+                'id': activity.id,
+                'employee_id': activity.employee_id,
+                'task_id': activity.task_id,
+                'project_id': activity.project_id,
+                'start_time': activity.start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                'end_time': activity.end_time.strftime('%Y-%m-%d %H:%M:%S'),
+                'duration': activity.duration
+            }
+            for activity in recent_activities
+        ]
+        
+        # total cost of tasks
+        total_cost = int(sum(task.project.hourly_rate * task.minutes_spent // 3600 for task in tasks))
+        
+        # total time spent on tasks
+        total_time = int(sum(task.minutes_spent for task in tasks))
+        
+        # project wise time and money spent
+        project_wise_time = {}
+        project_wise_cost = {}
+        for project in projects:
+            project_wise_time[project.id] = int(sum(task.minutes_spent for task in project.tasks))
+            project_wise_cost[project.id] = int(sum(task.project.hourly_rate * task.minutes_spent // 3600 for task in project.tasks))
+        
+        return {
+            'projects_count': len(projects),
+            'employees_count': employee_count,
+            'tasks_count': len(tasks),
+            'recent_activities': recent_activities,
+            'total_cost': total_cost,
+            'total_time': total_time,
+            'project_wise_time': project_wise_time,
+            'project_wise_cost': project_wise_cost
+        }
+        
+
+@api.route('/day-summary')
+class EmployerDaySummary(Resource):
+    @jwt_required()
+    @employer_required
+    @api.response(200, 'Success')
+    @api.response(403, 'Not authorized')
+    def get(self):
+        claims = get_jwt()
+        employer_id = claims['id']
+        
+        start_time = (datetime.now() - timedelta(days=7)).date()
+        end_time = datetime.now()
+        
+        # Fetching summary for this employer, How many projects, employees and tasks
+        # Recent top 5 activities from timeLog from employees
+        # Total cost of projects
+        # Total time spent on projects
+        projects = Project.query.filter_by(employer_id=employer_id).all()
+        # join through projects to get all tasks under this employer
+        project_ids = [project.id for project in projects]
+                    
+        # recent activities
+        recent_activities = TimeLog.query.filter(TimeLog.project_id.in_(project_ids)).filter(TimeLog.start_time.between(start_time, end_time)).all()
+        
+        # day wise sum of duration of timelog object
+        day_wise_duration = {}
+        for activity in recent_activities:
+            day = activity.start_time.strftime('%Y-%m-%d')
+            if day not in day_wise_duration:
+                day_wise_duration[day] = 0
+            day_wise_duration[day] += activity.duration
+                
+        return day_wise_duration
