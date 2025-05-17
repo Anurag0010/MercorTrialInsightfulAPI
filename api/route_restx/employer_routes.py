@@ -416,7 +416,16 @@ class EmployerEmployees(Resource):
                         'email': employee.email,
                         'username': employee.username,
                         'total_seconds': total_seconds,
-                        'total_cost': total_cost
+                        'total_cost': float(total_cost),
+                        'tasks': [{
+                            'id': task.id,
+                            'name': task.name,
+                            'status': task.status,
+                            'total_seconds': task.minutes_spent,
+                            'project_id': task.project_id,
+                            'project_name': task.project.name,
+                            'project_hourly_rate': float(task.project.hourly_rate) if task.project.hourly_rate else None,
+                        } for task in tasks]
                     })
         
         return employees
